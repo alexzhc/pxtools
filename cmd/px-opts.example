@@ -1,0 +1,9 @@
+-c PX-cluster1-8b261247-4fde-4a27-8928-fcbd9886ac4e
+-k etcd:http://10.0.0.1:19019,etcd:http://10.0.0.2:19019,etcd:http://10.0.0.3:19019
+-m eth1
+-d eth2
+-s /dev/sdb
+-s /dev/sdc
+-j /dev/sdd
+-secret_type kvdb
+-x kubernetes 

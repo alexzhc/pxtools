@@ -1,0 +1,6 @@
+[daocloud]
+name=DaoCloud
+baseurl=http://dao-packages.daocloud.io/centos/7.4.1708/daocloud/x86_64/stable
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0

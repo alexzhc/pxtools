@@ -1,0 +1,29 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-hdd-ha2-rwo
+  annotations:
+    volume.beta.kubernetes.io/storage-class: px-hdd-ha2-rwo
+  namespace: portworx
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 11Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-ssd-ha3-rwx
+  annotations:
+    volume.beta.kubernetes.io/storage-class: px-ssd-ha3-rwx
+  namespace: portworx
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 13Gi
+---

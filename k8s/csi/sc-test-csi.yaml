@@ -1,0 +1,21 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-hdd-ha3-csi
+parameters:
+  fs: "xfs"
+  priority_io: "low"
+  repl: "3"
+provisioner: com.openstorage.pxd
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-ssd-ha2-csi
+parameters:
+  fs: "xfs"
+  priority_io: "high"
+  repl: "2"
+provisioner: com.openstorage.pxd
+---

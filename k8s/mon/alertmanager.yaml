@@ -1,0 +1,22 @@
+global:
+  # The smarthost and SMTP sender used for mail notification
+  smtp_smarthost: 'smtp.daocloud.io:587'
+  smtp_from: 'alert@daocloud.io'
+  smtp_auth_username: "alert@daocloud.io"
+  smtp_auth_password: 'ABcd1234'
+route:
+  group_by: [Alertname]
+  # Send all notifications to me.
+  receiver: email-me
+receivers:
+- name: email-me
+  email_configs:
+  - to: 'alert@daocloud.io'
+    from: 'alert@daocloud.io'
+    smarthost: 'smtp.daocloud.io:587'
+    auth_username: 'alert@daocloud.io'
+    auth_identity: 'alert@daocloud.io'
+    auth_password: 'ABcd1234'
+
+## Edit the file and create a secret with it using the following command
+## kubectl create secret generic alertmanager-portworx --from-file=alertmanager.yaml -n kube-system

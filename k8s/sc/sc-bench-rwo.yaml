@@ -1,0 +1,30 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-ssd-ha1-rwo-bench-a3
+parameters:
+  force_unsupported_fs_type: "true"
+  fs: "xfs"
+  priority_io: "high"
+  repl: "1"
+  journal: "true"
+  nodiscard: "true"
+  aggregtion_level:  "3"
+provisioner: kubernetes.io/portworx-volume
+---
+# This setup requires 9 nodes with ssd
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-ssd-ha3-rwo-bench-a3
+parameters:
+  force_unsupported_fs_type: "true"
+  fs: "xfs"
+  priority_io: "high"
+  repl: "3"
+  journal: "true"
+  nodiscard: "true"
+  io_profiel: "db"
+  aggregtion_level:  "3"
+provisioner: kubernetes.io/portworx-volume
+

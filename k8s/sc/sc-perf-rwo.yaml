@@ -1,0 +1,40 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-ssd-ha1-rwo-perf
+parameters:
+  force_unsupported_fs_type: "true"
+  fs: "xfs"
+  priority_io: "high"
+  repl: "1"
+  journal: "true"
+  nodiscard: "true"
+provisioner: kubernetes.io/portworx-volume
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-ssd-ha2-rwo-perf
+parameters:
+  force_unsupported_fs_type: "true"
+  fs: "xfs"
+  priority_io: "high"
+  repl: "2"
+  journal: "true"
+  nodiscard: "true"
+provisioner: kubernetes.io/portworx-volume
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-ssd-ha3-rwo-perf
+parameters:
+  force_unsupported_fs_type: "true"
+  fs: "xfs"
+  priority_io: "high"
+  repl: "3"
+  journal: "true"
+  nodiscard: "true"
+  io_profiel: "db"
+provisioner: kubernetes.io/portworx-volume
+
