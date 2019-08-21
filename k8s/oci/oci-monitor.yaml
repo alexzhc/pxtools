@@ -258,6 +258,8 @@ spec:
 #              - key: node-role.kubernetes.io/master
 #                operator: DoesNotExist
       tolerations:
-        - operator: "Exists"
-          effect: "NoSchedule"
+        - operator: Exists
+          effect: NoSchedule
+        - key: CriticalAddonsOnly
+          operator: Exists
 ##################################
