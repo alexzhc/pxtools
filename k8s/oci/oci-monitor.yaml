@@ -89,6 +89,8 @@ kind: DaemonSet
 metadata:
   name: portworx
   namespace: kube-system
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ""
 spec:
   minReadySeconds: 0
   updateStrategy:
