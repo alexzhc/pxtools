@@ -171,17 +171,17 @@ _remove() {
     if [ ${FLAGS_force} -eq ${FLAGS_FALSE} ]; then
         if /opt/pwx-etcd/bin/runc list | grep -qw "portworx-etcd .* running"; then 
             clr_green "Check local member status"
-            LOCAL_MEMBER_SPEC=$( /opt/pwx-etcd/bin/runc exec portworx-etcd sh -c "etcdctl member list | grep -w \${ETCD_LISTEN_CLIENT_URLS}" )
+            LOCAL_MEMBER_SPEC=$( /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd sh -c "etcdctl member list | grep -w \${ETCD_LISTEN_CLIENT_URLS}" )
             echo ${LOCAL_MEMBER_SPEC}
             LOCAL_MEMBER_ID=$( echo ${LOCAL_MEMBER_SPEC} | awk 'BEGIN {FS =":"}{print $1}' )
-            /opt/pwx-etcd/bin/runc exec portworx-etcd etcdctl cluster-health | grep ${LOCAL_MEMBER_ID}
+            /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd etcdctl cluster-health | grep ${LOCAL_MEMBER_ID}
         
             clr_green "Deregister local member from etcd cluster"
-            MEMBER_COUNT=$( /opt/pwx-etcd/bin/runc exec portworx-etcd etcdctl member list | wc -l )
+            MEMBER_COUNT=$( /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd etcdctl member list | wc -l )
             if [[ "${MEMBER_COUNT}" == "1" ]]; then
                 clr_brown "WARN: this is the last member, the cluster will be destroyed"
             else
-                /opt/pwx-etcd/bin/runc exec portworx-etcd etcdctl member remove ${LOCAL_MEMBER_ID}
+                /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd etcdctl member remove ${LOCAL_MEMBER_ID}
             fi
         else 
             clr_brown "WARN: px-etcd seems not running on this host, use --force"
@@ -251,16 +251,16 @@ _start_service() {
 
 _status() { 
     clr_green "Check cluster health"
-    /opt/pwx-etcd/bin/runc exec portworx-etcd etcdctl -v
+    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd etcdctl -v
 
-    /opt/pwx-etcd/bin/runc exec portworx-etcd etcdctl cluster-health \
+    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd etcdctl cluster-health \
     | sed -r "s/( healthy)/$(clr_cyan \\1)/g; s/(degraded|unreachable)/$(clr_red \\1)/g" || true      
 
-    /opt/pwx-etcd/bin/runc exec portworx-etcd etcdctl member list \
+    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd etcdctl member list \
     | sed -r "s/(isLeader=true)/$(clr_cyan \\1)/g"  || true
 
     clr_green "For PX configuration:"
-    /opt/pwx-etcd/bin/runc exec portworx-etcd etcdctl cluster-health \
+    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd etcdctl cluster-health \
     | awk '/http/ {print "etcd:"$NF}' \
     | paste -sd "," -
    
@@ -268,7 +268,7 @@ _status() {
 
 _printenv() {
     clr_green "Environment variables:"
-    /opt/pwx-etcd/bin/runc exec portworx-etcd printenv ${FLAGS_key}
+    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd printenv ${FLAGS_key}
    
     clr_green "Recognized variables:"
     journalctl -lu portworx-etcd \
@@ -280,7 +280,7 @@ _cmd_ref() {
     clr_green "Command reference"
     echo "$( clr_brown 'Watch log:' )        journalctl -fu portworx-etcd"
     echo "$( clr_brown 'Watch container:' )  /opt/pwx-etcd/bin/runc list"
-    echo "$( clr_brown 'Check health:' )     /opt/pwx-etcd/bin/runc exec portworx-etcd etcdctl cluster-health"
+    echo "$( clr_brown 'Check health:' )     /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 portworx-etcd etcdctl cluster-health"
 }
 
 
@@ -314,7 +314,8 @@ _install() {
             "ETCD_AUTO_COMPACTION_RETENTION=3",
             "ETCD_QUOTA_BACKEND_BYTES=$(( 8 * 1024 ** 3))",
             "ETCD_SNAPSHOT_COUNT=5000",
-            "ETCDCTL_ENDPOINTS=http://${HOST_IP}:${CLIENT_PORT}"
+            "ETCDCTL_ENDPOINTS=http://${HOST_IP}:${CLIENT_PORT}",
+            "ETCD_ENABLE_V2=true"
 EOF
 
     # Generate config.json
@@ -373,15 +374,15 @@ _del_pwx() {
     confirm ${FLAGS_yes} || exit 1
 
     clr_brown "Check number of etcd entries for PX cluser UID: ${PX_UID}"
-    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=3 \
+    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 -e ETCDCTL_API=3 \
     portworx-etcd etcdctl get --prefix "pwx/${PX_UID}" | wc -l
 
     clr_brown "Delete etcd entries for PX cluster UID: ${PX_UID}"
-    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=3 \
+    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 -e ETCDCTL_API=3 \
     portworx-etcd etcdctl del --prefix "pwx/${PX_UID}"
 
     clr_brown "Check number of etcd entries for PX cluster UID: ${PX_UID}"
-    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=3 \
+    /opt/pwx-etcd/bin/runc exec -e ETCDCTL_API=2 -e ETCDCTL_API=3 \
     portworx-etcd etcdctl get --prefix "pwx/${PX_UID}" | wc -l
 }
 
