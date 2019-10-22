@@ -1,0 +1,339 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: portworx-service
+  namespace: kube-system
+  labels:
+    name: portworx
+spec:
+  selector:
+    name: portworx
+  type: NodePort
+  ports:
+    - name: px-api
+      protocol: TCP
+      port: 9001
+      targetPort: 9001
+    - name: px-kvdb
+      protocol: TCP
+      port: 9019
+      targetPort: 9019
+    - name: px-sdk
+      protocol: TCP
+      port: 9020
+      targetPort: 9020
+    - name: px-rest-gateway
+      protocol: TCP
+      port: 9021
+      targetPort: 9021
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: volumeplacementstrategies.portworx.io
+spec:
+  group: portworx.io
+  versions:
+    - name: v1beta2
+      served: true
+      storage: true
+    - name: v1beta1
+      served: false
+      storage: false
+  scope: Cluster
+  names:
+    plural: volumeplacementstrategies
+    singular: volumeplacementstrategy
+    kind: VolumePlacementStrategy
+    shortNames:
+    - vps
+    - vp
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: px-account
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+   name: node-get-put-list-role
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["watch", "get", "update", "list"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["delete", "get", "list", "watch", "update"]
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims", "persistentvolumes"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "update", "create"]
+- apiGroups: ["extensions"]
+  resources: ["podsecuritypolicies"]
+  resourceNames: ["privileged"]
+  verbs: ["use"]
+- apiGroups: ["portworx.io"]
+  resources: ["volumeplacementstrategies"]
+  verbs: ["get", "list"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: node-role-binding
+subjects:
+- kind: ServiceAccount
+  name: px-account
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: node-get-put-list-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: portworx
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: px-role
+  namespace: portworx
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "create", "update", "patch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: px-role-binding
+  namespace: portworx
+subjects:
+- kind: ServiceAccount
+  name: px-account
+  namespace: kube-system
+roleRef:
+  kind: Role
+  name: px-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: portworx
+  namespace: kube-system
+spec:
+  minReadySeconds: 0
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        name: portworx
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: px/enabled
+                operator: In
+                values:
+                - "true"
+              # - key: node-role.kubernetes.io/master
+              #   operator: DoesNotExist
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+        - key: CriticalAddonsOnly
+          operator: Exists
+      hostNetwork: true
+      hostPID: false
+      containers:
+        - name: portworx
+          image: daocloud.io/portworx/oci-monitor:2.1.5
+          imagePullPolicy: IfNotPresent
+###################################
+######## Added by DaoCloud ########
+          resources:
+            requests:
+              cpu: '500m'
+              memory: '500Mi'
+            limits:
+              cpu: '1'
+              memory: '1Gi'
+##################################
+          args: [
+            "-c","DCEX-011bf2d6-8cab-4092-b12e-c67054285c92",
+            "-k","etcd:http://10.10.176.151:19019,etcd:http://10.10.176.152:19019,etcd:http://10.10.176.153:19019",
+            "-m","ens192",
+            "-d","ens224",
+            "-j","auto",
+            "-s","/dev/sdb",
+            "-s","/dev/sdc",
+            "-secret_type","kvdb",
+            "-x","kubernetes",
+            "-rt_opts","copy_on_write=0",
+            "--pull","IfNotPresent",
+            ]
+          env:
+            - name: "AUTO_NODE_RECOVERY_TIMEOUT_IN_SECS"
+              value: "1500"
+            - name: "PX_TEMPLATE_VERSION"
+              value: "v4"
+            - name: CSI_ENDPOINT
+              value: unix:///var/lib/kubelet/plugins/com.openstorage.pxd/csi.sock
+            
+          livenessProbe:
+            periodSeconds: 30
+            initialDelaySeconds: 840 # allow image pull in slow networks
+            httpGet:
+              host: 127.0.0.1
+              path: /status
+              port: 9001
+          readinessProbe:
+            periodSeconds: 10
+            httpGet:
+              host: 127.0.0.1
+              path: /health
+              port: 9015
+          terminationMessagePath: "/tmp/px-termination-log"
+          securityContext:
+            privileged: true
+          volumeMounts:
+###################################
+######## Added by DaoCloud ########
+            - name: localtime
+              mountPath: /etc/localtime
+###################################
+            - name: diagsdump
+              mountPath: /var/cores
+            - name: dockersock
+              mountPath: /var/run/docker.sock
+            - name: containerdsock
+              mountPath: /run/containerd
+            - name: criosock
+              mountPath: /var/run/crio
+            - name: crioconf
+              mountPath: /etc/crictl.yaml
+            - name: etcpwx
+              mountPath: /etc/pwx
+            - name: csi-driver-path
+              mountPath: /var/lib/kubelet/plugins/com.openstorage.pxd
+            - name: optpwx
+              mountPath: /opt/pwx
+            - name: procmount
+              mountPath: /host_proc
+            - name: sysdmount
+              mountPath: /etc/systemd/system
+            - name: journalmount1
+              mountPath: /var/run/log
+              readOnly: true
+            - name: journalmount2
+              mountPath: /var/log
+              readOnly: true
+            - name: dbusmount
+              mountPath: /var/run/dbus
+        - name: csi-node-driver-registrar
+          image: daocloud.io/portworx/csi-node-driver-registrar:v1.1.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=/var/lib/kubelet/plugins/com.openstorage.pxd/csi.sock"
+          imagePullPolicy: IfNotPresent
+###################################
+######## Added by DaoCloud ########
+          resources:
+            # requests:
+            #   cpu: '500m'
+            #   memory: '500Mi'
+            limits:
+              cpu: '1'
+              memory: '1Gi'
+##################################
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          securityContext:
+            privileged: true
+          volumeMounts:
+###################################
+######## Added by DaoCloud ########
+            - name: localtime
+              mountPath: /etc/localtime
+###################################
+            - name: csi-driver-path
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+      restartPolicy: Always
+      serviceAccountName: px-account
+      volumes:
+        - name: diagsdump
+          hostPath:
+            path: /var/cores
+        - name: dockersock
+          hostPath:
+            path: /var/run/docker.sock
+        - name: containerdsock
+          hostPath:
+            path: /run/containerd
+        - name: criosock
+          hostPath:
+            path: /var/run/crio
+        - name: crioconf
+          hostPath:
+            path: /etc/crictl.yaml
+            type: FileOrCreate
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: DirectoryOrCreate
+        - name: csi-driver-path
+          hostPath:
+            path: /var/lib/kubelet/plugins/com.openstorage.pxd
+            type: DirectoryOrCreate
+        - name: etcpwx
+          hostPath:
+            path: /etc/pwx
+        - name: optpwx
+          hostPath:
+            path: /opt/pwx
+        - name: procmount
+          hostPath:
+            path: /proc
+        - name: sysdmount
+          hostPath:
+            path: /etc/systemd/system
+        - name: journalmount1
+          hostPath:
+            path: /var/run/log
+        - name: journalmount2
+          hostPath:
+            path: /var/log
+        - name: dbusmount
+          hostPath:
+            path: /var/run/dbus
+###################################
+######## Added by DaoCloud ########
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+###################################
+######## Added by DaoCloud ########
+#      imagePullSecrets:
+#        - name: "portworx-regcred"

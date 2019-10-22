@@ -3,58 +3,70 @@ kind: StorageClass
 metadata:
   name: px-hdd-ha1-csi
 parameters:
+  force_unsupported_fs_type: "true"
   fs: "xfs"
   priority_io: "low"
   repl: "1"
 provisioner: com.openstorage.pxd
+allowVolumeExpansion: true
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: px-hdd-ha2-csi
 parameters:
+  force_unsupported_fs_type: "true"
   fs: "xfs"
   priority_io: "low"
   repl: "2"
 provisioner: com.openstorage.pxd
+allowVolumeExpansion: true
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: px-hdd-ha3-csi
 parameters:
+  force_unsupported_fs_type: "true"
   fs: "xfs"
   priority_io: "low"
   repl: "3"
 provisioner: com.openstorage.pxd
+allowVolumeExpansion: true
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: px-ssd-ha1-csi
 parameters:
+  force_unsupported_fs_type: "true"
   fs: "xfs"
   priority_io: "high"
   repl: "1"
 provisioner: com.openstorage.pxd
+allowVolumeExpansion: true
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: px-ssd-ha2-csi
 parameters:
+  force_unsupported_fs_type: "true"
   fs: "xfs"
   priority_io: "high"
   repl: "2"
 provisioner: com.openstorage.pxd
+allowVolumeExpansion: true
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: px-ssd-ha3-csi
 parameters:
+  force_unsupported_fs_type: "true"
   fs: "xfs"
   priority_io: "high"
   repl: "3"
 provisioner: com.openstorage.pxd
+allowVolumeExpansion: true
 
