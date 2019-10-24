@@ -161,7 +161,7 @@ spec:
       hostPID: false
       containers:
         - name: portworx
-          image: daocloud.io/portworx/oci-monitor:2.2.0
+          image: daocloud.io/portworx/oci-monitor:2.1.5
           imagePullPolicy: IfNotPresent
 ###################################
 ######## Added by DaoCloud ########

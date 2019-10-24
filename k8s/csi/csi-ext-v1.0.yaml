@@ -3,7 +3,9 @@ kind: ServiceAccount
 metadata:
   name: px-csi-account
   namespace: kube-system
+
 ---
+
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -61,7 +63,9 @@ rules:
 - apiGroups: ["coordination.k8s.io"]
   resources: ["leases"]
   verbs: ["*"]
+
 ---
+
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -74,7 +78,9 @@ roleRef:
   kind: ClusterRole
   name: px-csi-role
   apiGroup: rbac.authorization.k8s.io
+
 ---
+
 kind: Service
 apiVersion: v1
 metadata:
@@ -82,7 +88,9 @@ metadata:
   namespace: kube-system
 spec:
   clusterIP: None
+
 ---
+
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -219,7 +227,10 @@ spec:
 ######## Added by DaoCloud ########
 #      imagePullSecrets:
 #        - name: "portworx-regcred"
+###################################
+
 ---
+
 kind: Service
 apiVersion: v1
 metadata:
@@ -244,7 +255,9 @@ spec:
       protocol: TCP
       port: 9021
       targetPort: 9021
+
 ---
+
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
@@ -296,7 +309,9 @@ spec:
 ###################################
       restartPolicy: Always
       serviceAccountName: px-account
+
 ---
+
 apiVersion: storage.k8s.io/v1beta1
 kind: CSIDriver
 metadata:
