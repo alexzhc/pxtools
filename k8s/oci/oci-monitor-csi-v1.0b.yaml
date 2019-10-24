@@ -161,7 +161,7 @@ spec:
       hostPID: false
       containers:
         - name: portworx
-          image: daocloud.io/portworx/oci-monitor:2.1.5
+          image: daocloud.io/portworx/oci-monitor:2.2.0
           imagePullPolicy: IfNotPresent
 ###################################
 ######## Added by DaoCloud ########
@@ -242,7 +242,7 @@ spec:
             - name: journalmount2
               mountPath: /var/log
               readOnly: true
-            - name: dbusmount
+            - name: dbusmount 
               mountPath: /var/run/dbus
         - name: csi-node-driver-registrar
           image: daocloud.io/portworx/csi-node-driver-registrar:v1.1.0
