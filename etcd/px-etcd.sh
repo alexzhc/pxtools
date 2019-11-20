@@ -235,7 +235,7 @@ _upgrade() {
 _extract_rootfs() {
     [ ${FLAGS_pull} -eq ${FLAGS_TRUE} ] || ${UPGRADE} && docker pull ${IMAGE_ADDR}
     printf "${IMAGE_ADDR}  "
-    docker export $( docker create ${IMAGE_ADDR} ) | \
+    docker export $( docker create --rm ${IMAGE_ADDR} ) | \
     tar -C /opt/pwx-etcd/oci/rootfs --checkpoint=200 --checkpoint-action=exec='printf "\b=>"' -xf -
     echo " /opt/pwx-etcd/oci/rootfs/"
 }
